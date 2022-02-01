@@ -1,1 +1,28 @@
-hello
+body {
+    margin: 20px auto;
+    text-align: center;
+    font-size: 150%;
+    background-color: white;
+    height: 800px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+input {
+    font-size: 100%;
+    text-align: center;
+    padding: 5px 7px;
+}
+
+canvas {
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 3px 5px 6px black;
+}
+
+div.relative {
+    position: absolute;
+    top: 76px;
+    left: 120px;
+}
