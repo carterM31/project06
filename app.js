@@ -1,138 +1,119 @@
-var gameStart = null;
-gameSpeed = null;
-gameArea = null;
-gameAreaContext = null;
-gameAreaWidth = 0;
-gameAreaHeight = 0;
-cellWidth = 0;
-playScore = 0;
+/**
+ * For this app we need logic that will let us know who's turn it is.
+ * while letting us know who wins, loses and if tie happens.
+ * all while not reloading the page. 
+ */
 
-snake = null;
-snakeFood = null;
-snakeDirection = null;
-speedSize = 0;
-timer = null;
+// our const reaching out to get the cell, board, winning message, restart game.
+const cellElements = document.querySelectorAll('[data-cell]')
+const gameBoard = document.getElementById('gameBoard')
+const winningMessageElement = document.getElementById('winningMessage')
+const restartButton = document.getElementById('restartButton')
+const winningMessageTextElement = document.querySelector('[data-winning-message-text]')
+let circleTurn
 
-function initialize() {
-    gameStart = document.getElementById("gameStart");
-    gameSpeed = document.getElementById("gameSpeed");
-    gameArea = document.getElementById("gameArea");
-    gameAreaContext = gameArea.getContext('2d');
-    gameAreaWidth = 400;
-    gameAreaHeight = 600;
-    cellWidth = 20;
-    gameArea.width = gameAreaWidth;
-    gameArea.height = gameAreaHeight;
+var player1 = "player 1"
+var player2 = "player 2"
 
-    gameStart.onclick = function() {
-        this.disable = true;
-        startGame();
+function editNames() {
+  player1 = prompt("Change Player1 name!")
+  player2 = prompt("Change Player2 name!")
 
-    }
-    function startGame() {
-        playScore = 0;
-        snakeDirection = "right";
-        speedSize = parsInt(gameSpeed.value);
-
-        if(speedSize > 9) {
-            speedSize = 9;
-        }else if (speedSize < 0) {
-            speedSize = 1;
-        }
-        snake = [];
-        snake.push({ x: 0 , y : cellWidth})
-    }
-creatFood();
-clearInterval(timer);
-//timer = setInterval(createga)
+  document.querySelector("p.Player1").innerHTML = Player1
+  document.querySelector("p.Player2").innerHTML = Player2
 }
 
-function creatFood {
-    snakeFood = {
-        x: Math.round((Math.random() * (gameAreaWidth - cellWidth)) /cellWidth),
-        x: Math.round((Math.random() * (gameAreaHeight - cellWidth)) /cellWidth),
-    }
+// here we set up our x and O with winning combo.
+const xTic = 'x'
+const oTic = 'circle'
+const winningTicTacToe = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6]
+]
+
+// Call our startGame function.
+startGame()
+// Event click to restart.
+restartButton.addEventListener('click', startGame)
+
+// We want to start the game and make sure cells are empty.
+function startGame() {
+  circleTurn = false
+  cellElements.forEach(cell => {
+    cell.classList.remove(xTic)
+    cell.classList.remove(oTic)
+    cell.removeEventListener('click', handleClick)
+    cell.addEventListener('click', handleClick, { once: true })
+  })
+  previewNextTic()
+  winningMessageElement.classList.remove('show')
 }
 
-function createGameArea() {
-
-    let snakeX = snake[0].x;
-    let snakeY = snake[0].y;
-    
-    gameAreaContext.fillStyle = "#FFFFFF";
-    gameAreaContext.fillReact(0, 0, gameAreaWidth, gameAreaHeight);
-    gameAreaContext.strokeStyle = "#CCCCCC";
-    gameAreaContext.strokeReact(0, 0, gameAreaWidth, gameAreaHeight);
-
-    if(snakeDirection == 'right') {
-        snakeX++; 
-    }else if (snakeDirection == 'left') {
-        snakeX--; 
-    }else if (snakeDirection == 'down') {
-        snakeY++;
-    }else if (snakeDirection == 'up') {
-        snakeY--;
-    }
-    if (
-snakeX == -1 ||
-snakeX == gameAreaWidth/ cellWidth ||
-snakeY == -1 ||
-snakeY == gameAreaHeight /cellWidth ||
-control(snakeX, snakeY, snake)
-    ) {
-        writeScore();
-        clearInterval(timer);
-        gameStart.disabled = false;
-        return;
-    }
-
-    if (snake == snakeFood.x && snakeY== snakeFood.y) {
-        let newHead = { x: snakeX, y: snakeY};
-        playerScore += speedSize;
-        creatFood()
-    }else {
-        let newHead= snake.pop();
-        newHead.x = snakeX;
-        newHead.y = snakeY;
-    }
-    snake.unshift(newHead);
-    for (let i = 0; i < snake.length; i++) {
-        creatSquare(snake[i].x,snakeFood.y)
-    }
-
-   creatSquare(snakeFood.x, snakeFood.y); 
+// pass draw into the endGame func to give the win or draw message.
+function endGame(draw) {
+  if (draw) {
+    winningMessageTextElement.innerText = 'Draw!'
+  } else {
+    winningMessageTextElement.innerText = `${circleTurn ? "O's" : "X's"} Wins!`
+  }
+  winningMessageElement.classList.add('show')
 }
 
-function control(x, y, array) {
-    for (let i = 0; i < array.length; i++) {
-        if (array[i].x == x && array[i].y == y) return true;
-    }
-    return false;
+// Event listener with handleClick using .target we also have if else if else statement.
+function handleClick(event) {
+  const cell = event.target
+  const currentClass = circleTurn ? oTic : xTic
+  placeMark(cell, currentClass)
+  if (checkWin(currentClass)) {
+    endGame(false)
+  } else if (isDraw()) {
+    endGame(true)
+  } else {
+    swapTurns()
+    previewNextTic()
+  }
 }
 
-function writeScore() {
-    gameAreaContext.font = "50px sans-serif";
-    gameAreaContext.fillStyle = "#FFF333";
-    gameAreaContext.fillText( 
-        "score : " + playScore,
-        gameAreaWidth /2 -100,
-        gameAreaWidth /2
-    )
+// needed a func to go through each cell and check for xTic and oTic 
+function isDraw() {
+  return [...cellElements].every(cell => {
+    return cell.classList.contains(xTic) || cell.classList.contains(oTic)
+  })
 }
 
-function creatSquare(x, y) {
-    gameAreaContext.fillStyle = "000000";
-    gameAreaContext.fillReact(x * cellWidth, y * cellWidth, cellWidth, cellWidth)
+// we and to place the xTic or oTic when we choose our cell.
+function placeMark(cell, currentClass) {
+  cell.classList.add(currentClass)
 }
 
-function changeDirection(e) {
-    let keys = e.which;
-    
-    if (keys == "40" && snakeDirection != "up" )snakeDirection = "down";
-    else if (keys == "39" && snakeDirection != "left" )snakeDirection = "right";
-    else if (keys == "38" && snakeDirection != "down" )snakeDirection = "up";
-    else if (keys == "37" && snakeDirection != "right" )snakeDirection = "left";
+//need to swap plyers when called 
+function swapTurns() {
+  circleTurn = !circleTurn
 }
 
-window.onkeydown= changeDirection;
-window.onload = initialize;
+// I wanted to see a preview of the next players turn 
+function previewNextTic() {
+  gameBoard.classList.remove(xTic)
+  gameBoard.classList.remove(oTic)
+  if (circleTurn) {
+    gameBoard.classList.add(oTic)
+  } else {
+    gameBoard.classList.add(xTic)
+  }
+}
+
+
+// Finally need to check if we won the game and return 
+function checkWin(currentClass) {
+  return winningTicTacToe.some(combination => {
+    return combination.every(index => {
+      return cellElements[index].classList.contains(currentClass)
+    })
+  })
+}
